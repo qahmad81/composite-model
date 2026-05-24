@@ -202,6 +202,61 @@ class TokenService
         });
     }
 
+    public function modifyReservation(int $reservationId, int $newAmount): int
+    {
+        return DB::transaction(function () use ($reservationId, $newAmount) {
+            $reservation = PendingReservation::where('id', $reservationId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$reservation) {
+                throw new RuntimeException("Reservation not found.");
+            }
+
+            $token = InternalToken::where('id', $reservation->internal_token_id)
+                ->lockForUpdate()
+                ->first();
+
+            $clientBalance = ClientBalance::where('client_id', $token->client_id)
+                ->lockForUpdate()
+                ->first();
+
+            $diff = $newAmount - $reservation->amount;
+
+            if ($diff > 0) {
+                if ($clientBalance->pending_balance < $diff) {
+                    throw new RuntimeException("Insufficient balance to increase reservation.");
+                }
+                
+                if ($token->limit_balance > 0 && ($token->pending_balance + $diff) > $token->limit_balance) {
+                    throw new RuntimeException("Token limit exceeded.");
+                }
+
+                $clientBalance->decrement('pending_balance', $diff);
+                $token->increment('pending_balance', $diff);
+            } elseif ($diff < 0) {
+                $absDiff = abs($diff);
+                $clientBalance->increment('pending_balance', $absDiff);
+                $token->decrement('pending_balance', $absDiff);
+            }
+
+            $reservation->update(['amount' => $newAmount]);
+
+            InternalTransaction::create([
+                'client_id' => $token->client_id,
+                'internal_token_id' => $token->id,
+                'pending_reservation_id' => $reservation->id,
+                'type' => 'reserve_adjust',
+                'amount' => $diff,
+                'balance_before' => $clientBalance->pending_balance + ($diff > 0 ? $diff : 0),
+                'balance_after' => $clientBalance->pending_balance,
+                'description' => "Adjusted reservation $reservationId to $newAmount",
+            ]);
+
+            return $reservation->id;
+        });
+    }
+
     public function topup(int $clientId, int $amount): void
     {
         DB::transaction(function () use ($clientId, $amount) {

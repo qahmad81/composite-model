@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->foreignId('internal_token_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('pending_reservation_id')->nullable()->constrained()->nullOnDelete();
-            $table->enum('type', ['topup', 'reserve', 'confirm', 'cancel', 'expire', 'refund']);
+            $table->enum('type', ['topup', 'reserve', 'confirm', 'cancel', 'expire', 'refund', 'reserve_adjust']);
             $table->bigInteger('amount');
             $table->bigInteger('balance_before');
             $table->bigInteger('balance_after');
