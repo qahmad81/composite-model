@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flow Editor - Composite Model</title>
+    <title>Flow Editor</title>
     @viteReactRefresh
     @vite(['resources/js/flow-editor/index.jsx'])
     <style>
@@ -12,6 +12,6 @@
     </style>
 </head>
 <body>
-    <div id="flow-editor-root"></div>
+    <div id="flow-editor-root" data-module-id="{{ $compositeModule->id }}"></div>
 </body>
 </html>
