@@ -9,6 +9,9 @@ use App\Services\Flow\Nodes\ModelNode;
 use App\Services\Flow\Nodes\ConditionNode;
 use App\Services\Flow\Nodes\RouterNode;
 use App\Services\Flow\Nodes\DataProcessorNode;
+use App\Services\Flow\Nodes\ParallelNode;
+use App\Services\Flow\Nodes\AggregatorNode;
+use App\Services\Flow\Nodes\LoopNode;
 use Exception;
 use Illuminate\Support\Str;
 
@@ -62,14 +65,19 @@ class FlowEngine
             $totalCost += $result->cost;
             $lastOutput = $result->output;
 
+            $metadata = $result->metadata;
+
             // Update context
             if ($result->output !== 'processed') {
                 $context->accumulated_output .= ($context->accumulated_output ? "\n" : "") . $result->output;
             }
             
-            if (isset($result->metadata['new_variables'])) {
-                $context->variables = array_merge($context->variables, $result->metadata['new_variables']);
+            if (isset($metadata['new_variables'])) {
+                $context->variables = array_merge($context->variables, $metadata['new_variables']);
+                unset($metadata['new_variables']);
             }
+
+            $context->node_metadata = array_merge($context->node_metadata, $metadata);
 
             // Sync reservation if needed
             if ($context->reservation_id && $totalCost > 0) {
@@ -93,7 +101,7 @@ class FlowEngine
             tokens_input: $totalTokensInput,
             tokens_output: $totalTokensOutput,
             cost: $totalCost,
-            metadata: ['variables' => $context->variables]
+            metadata: array_merge(['variables' => $context->variables], $context->node_metadata)
         );
     }
 
@@ -108,6 +116,9 @@ class FlowEngine
             'condition' => new ConditionNode($id, $type, $config),
             'router' => new RouterNode($id, $type, $config),
             'data_processor' => new DataProcessorNode($id, $type, $config),
+            'parallel' => new ParallelNode($id, $type, $config),
+            'aggregator' => new AggregatorNode($id, $type, $config),
+            'loop' => new LoopNode($id, $type, $config),
             default => throw new Exception("Unknown node type: $type"),
         };
     }

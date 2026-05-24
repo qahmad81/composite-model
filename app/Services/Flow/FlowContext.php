@@ -13,6 +13,7 @@ class FlowContext
         public ?int $reservation_id = null,
         public $token = null,
         public ?CompositeModule $composite_module = null,
-        public array $variables = []
+        public array $variables = [],
+        public array $node_metadata = []
     ) {}
 }
