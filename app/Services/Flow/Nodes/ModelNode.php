@@ -13,7 +13,7 @@ class ModelNode extends BaseNode
 {
     public function execute(FlowContext $context): NodeResult
     {
-        $modelId = $this->config['model_id'] ?? null;
+        $modelId = $this->config['provider_model_id'] ?? $this->config['model_id'] ?? null;
         $fallbackModelId = $this->config['fallback_model_id'] ?? null;
         $systemPrompt = $this->config['system_prompt'] ?? '';
 

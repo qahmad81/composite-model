@@ -39,6 +39,46 @@ const ModelNodeComponent = ({ data }) => (
   </BaseNode>
 );
 
+const StartNodeComponent = ({ data }) => (
+  <div style={{
+    padding: '15px',
+    borderRadius: '50%',
+    background: '#fff',
+    border: `3px solid #22c55e`,
+    width: '60px',
+    height: '60px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 'bold',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+    fontSize: '12px'
+  }}>
+    START
+    <Handle type="source" position={Position.Bottom} />
+  </div>
+);
+
+const EndNodeComponent = ({ data }) => (
+  <div style={{
+    padding: '15px',
+    borderRadius: '50%',
+    background: '#fff',
+    border: `3px solid #ef4444`,
+    width: '60px',
+    height: '60px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 'bold',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+    fontSize: '12px'
+  }}>
+    <Handle type="target" position={Position.Top} />
+    END
+  </div>
+);
+
 const ParallelNodeComponent = ({ data }) => (
   <BaseNode label="Parallel" color="#a855f7">
     <div>Parallel execution</div>
@@ -76,6 +116,8 @@ const DataProcessorNodeComponent = ({ data }) => (
 );
 
 const nodeTypes = {
+  start: StartNodeComponent,
+  end: EndNodeComponent,
   model: ModelNodeComponent,
   parallel: ParallelNodeComponent,
   aggregator: AggregatorNodeComponent,
@@ -86,6 +128,8 @@ const nodeTypes = {
 };
 
 const paletteItems = [
+  { type: 'start', label: 'Start', color: '#22c55e' },
+  { type: 'end', label: 'End', color: '#ef4444' },
   { type: 'model', label: 'Model', color: '#3b82f6' },
   { type: 'parallel', label: 'Parallel', color: '#a855f7' },
   { type: 'aggregator', label: 'Aggregator', color: '#22c55e' },
@@ -138,12 +182,17 @@ export default function App() {
       const type = event.dataTransfer.getData('application/reactflow');
       if (!type) return;
 
-      const position = { x: event.clientX - 200, y: event.clientY - 40 };
+      const position = { x: event.clientX - 400, y: event.clientY - 40 };
       const newNode = {
         id: Math.random().toString(36).substr(2, 9),
         type,
         position,
-        data: { label: `${type} node` },
+        data: { 
+          label: `${type} node`,
+          // Default config for new nodes
+          ...(type === 'model' ? { provider_model_id: '', system_prompt: '' } : {}),
+          ...(type === 'end' ? { output_format: 'text' } : {}),
+        },
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -223,6 +272,23 @@ export default function App() {
         >
           Save Changes
         </button>
+        <button
+          onClick={() => {
+            window.location.href = `/admin/composite-modules/${moduleId}/edit`;
+          }}
+          style={{
+            marginTop: '10px',
+            width: '100%',
+            padding: '10px',
+            background: '#64748b',
+            color: '#fff',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Close
+        </button>
       </div>
 
       {/* Flow Canvas */}
@@ -290,6 +356,23 @@ export default function App() {
                   >
                     <option value="">None</option>
                     {models.map(m => <option key={m.id} value={m.id}>{m.provider_name}: {m.name}</option>)}
+                  </select>
+                </label>
+              </>
+            )}
+
+            {selectedNode.type === 'end' && (
+              <>
+                <label>
+                  Output Format:
+                  <select
+                    value={selectedNode.data.output_format || 'text'}
+                    onChange={(e) => updateNodeData(selectedNode.id, { output_format: e.target.value })}
+                    style={{ width: '100%', padding: '5px' }}
+                  >
+                    <option value="text">Text</option>
+                    <option value="json">JSON</option>
+                    <option value="markdown">Markdown</option>
                   </select>
                 </label>
               </>

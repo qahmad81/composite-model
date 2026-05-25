@@ -22,8 +22,17 @@ class FlowEditorController extends Controller
             'flow_json' => 'required|array',
         ]);
 
+        $flowJson = $validated['flow_json'];
+        
+        // Extract configs for Laravel services
+        if (isset($flowJson['nodes'])) {
+            foreach ($flowJson['nodes'] as &$node) {
+                $node['config'] = $node['data'] ?? [];
+            }
+        }
+
         $compositeModule->update([
-            'flow_json' => $validated['flow_json'],
+            'flow_json' => $flowJson,
         ]);
 
         return response()->json(['message' => 'Flow updated successfully']);

@@ -12,6 +12,8 @@ use App\Services\Flow\Nodes\DataProcessorNode;
 use App\Services\Flow\Nodes\ParallelNode;
 use App\Services\Flow\Nodes\AggregatorNode;
 use App\Services\Flow\Nodes\LoopNode;
+use App\Services\Flow\Nodes\StartNode;
+use App\Services\Flow\Nodes\EndNode;
 use Exception;
 use Illuminate\Support\Str;
 
@@ -26,7 +28,10 @@ class FlowEngine
         $flow = $module->flow_json;
         $nodes = $flow['nodes'] ?? [];
         $edges = $flow['edges'] ?? [];
-        $startNodeId = $flow['startNodeId'] ?? ($nodes[0]['id'] ?? null);
+        
+        // Find start node from nodes if not explicitly set
+        $startNode = collect($nodes)->firstWhere('type', 'start');
+        $startNodeId = $flow['startNodeId'] ?? ($startNode['id'] ?? ($nodes[0]['id'] ?? null));
 
         if (!$startNodeId) {
             throw new Exception("Start node not found in flow.");
@@ -119,6 +124,8 @@ class FlowEngine
             'parallel' => new ParallelNode($id, $type, $config),
             'aggregator' => new AggregatorNode($id, $type, $config),
             'loop' => new LoopNode($id, $type, $config),
+            'start' => new StartNode($id, $type, $config),
+            'end' => new EndNode($id, $type, $config),
             default => throw new Exception("Unknown node type: $type"),
         };
     }
