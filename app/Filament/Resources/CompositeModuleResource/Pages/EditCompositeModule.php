@@ -13,6 +13,12 @@ class EditCompositeModule extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('openFlowBuilder')
+                ->label('Open Flow Builder')
+                ->url(fn ($record) => route('flow-editor', ['compositeModule' => $record->id]))
+                ->openUrlInNewTab()
+                ->color('primary')
+                ->icon('heroicon-o-pencil-square'),
             Actions\DeleteAction::make(),
         ];
     }
